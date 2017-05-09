@@ -1,4 +1,3 @@
 rootProject.name = 'poignee'
-include 'shell-package'
-include 'util'
+include 'util', 'shell-package'
 
