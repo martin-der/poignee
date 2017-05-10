@@ -3,10 +3,18 @@ package net.tetrakoopa.poignee.util
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
+import net.tetrakoopa.mdu4j.util.IOUtil
 
 class ShellPackagePlugin implements Plugin<Project> {
 
-	void setShellPackageDefaults(Project project) {
+	private File toolRootDir
+
+	private getTopProject(Project project) {
+		while (project.getParent() != null) project = project.getParent()
+		return project
+	}
+
+	private void setShellPackageDefaults(Project project) {
 		ShellPackagePluginExtension packaging = (ShellPackagePluginExtension) project.getExtensions().findByName("packaging")
 		packaging.sourceDir = "src"
 		packaging.distributionName = "${project.name}-${project.version}"
@@ -14,12 +22,27 @@ class ShellPackagePlugin implements Plugin<Project> {
 		packaging.output.documentationDir = "${project.buildDir}/documentation"
 	}
 
+	private void prepareTools(Project project) {
+		//File.createTempDir
+
+		Project topProject = getTopProject(project);
+		toolRootDir = topProject.file("${topProject.buildDir}/net.tetrakoopa.poignee.shell-package/tool")
+		toolRootDir.mkdirs()
+		InputStream toolInput = getClass().getClassLoader().getResourceAsStream("net.tetrakoopa.poignee.shell-package.tool.zip")
+		IOUtil.copy((InputStream)toolInput, new FileOutputStream(topProject.file("${toolRootDir}/tools.zip")))
+
+		topProject.copy {
+			from topProject.zipTree(topProject.file("${toolRootDir}/tools.zip"))
+			into "${toolRootDir}"
+		}
+	}
+
 	void apply(Project project) {
-		//project.apply(plugin:'base')
+
+		prepareTools(project)
 
 		project.extensions.create("packaging", ShellPackagePluginExtension)
 		setShellPackageDefaults(project)
-
 
 		project.task('documentation') {
 
@@ -35,7 +58,7 @@ class ShellPackagePlugin implements Plugin<Project> {
 				shellScripts.each { File file ->
 					def document = new File(docDir, "${file.name}.md")
 					project.exec {
-						commandLine 'tool/doc/shdoc/shdoc_io_w.sh', "${file.path}", "${document.path}"
+						commandLine "${toolRootDir}/doc/shdoc/shdoc_io_w.sh", "${file.path}", "${document.path}"
 					}
 					// Remove the documentation if it's empty
 					if(!(document.length()>0) || document.text.matches("[\n \t]*") ) document.delete()
@@ -48,24 +71,16 @@ class ShellPackagePlugin implements Plugin<Project> {
 
 			destinationDir = project.file("${project.packaging.output.distributionDir}/final")
 
-			from project.fileTree(project.packaging.sourceDir).include('*.sh', '*.py', 'README.md')
-			from project.fileTree(project.packaging.output.documentationDir).include('./**')
-			from project.file('README.md')
-		}
-		/*gradle.taskGraph.whenReady {TaskExecutionGraph graph ->
-			if(graph.hasTask(tasks.packageZip)) {
-				def fromDir = rootProject.file('services/website/app/')
-				def toDir = rootProject.file('dist/app/')
-				baseName = project.packaging.distributionName
-				destinationDir = project.file("${project.packaging.output.distributionDir}/final")
-
-				from project.fileTree(project.packaging.sourceDir).include('*.sh', '*.py', 'README.md')
-				from project.fileTree(project.packaging.output.documentationDir).include('./**')
-				from project.file('README.md')
-				tasks.copy.from = fromDir
-				tasks.copy.into = toDir
+			from { ->
+				project.fileTree(project.packaging.sourceDir).include('*.sh', '*.py', 'README.md')
 			}
-		}*/
+			from { ->
+				project.fileTree(project.packaging.output.documentationDir).include('./**')
+			}
+			from  { ->
+				project.file('README.md')
+			}
+		}
 
 		project.task('installer', dependsOn: 'packageZip') {
 
@@ -74,19 +89,13 @@ class ShellPackagePlugin implements Plugin<Project> {
 			doLast {
 
 				def installerFile = ext.outputFiles
-				//project.file("${project.packaging.output.distributionDir}/${project.packaging.distributionName}.shar")
-
-				//println "build dir = '${project.buildDir}'"
-				//project.fileTree(project.packaging.sourceDir).include('*.sh', '*.py', 'README.md').each { File file ->
-				//	println "Found ${file.path}"
-				//}
 
 				project.copy {
 					from project.zipTree(project.file("${project.packaging.output.distributionDir}/final/${project.packaging.distributionName}.zip"))
 					into "${project.packaging.output.distributionDir}/installer/content"
 				}
 				project.copy {
-					from project.file('tool/install/template/install.sh')
+					from new File("${toolRootDir}/install/template/install.sh")
 					into "${project.packaging.output.distributionDir}/installer"
 				}
 
@@ -101,7 +110,7 @@ class ShellPackagePlugin implements Plugin<Project> {
 				def shar = project.file("${project.packaging.output.distributionDir}/final/${project.packaging.distributionName}.run")
 				if (shar.exists()) shar.delete()
 
-				shar.append(new File('tool/install/template/install-pre.sh').text)
+				shar.append(new File("${toolRootDir}/install/template/install-pre.sh").text)
 
 				shar.append("# *** Application variables *** \n")
 				shar.append("MDU_INSTALL_APPLICATION_NAME=${project.name}\n")
@@ -110,7 +119,7 @@ class ShellPackagePlugin implements Plugin<Project> {
 				shar.append("\n")
 
 				shar.append(new File("${project.packaging.output.distributionDir}/${project.packaging.distributionName}.shar").text.replaceAll('\nexit[ ]+0[\n ]*$', "\n"))
-				shar.append(new File("tool/install/template/install-post.sh").text)
+				shar.append(new File("${toolRootDir}/install/template/install-post.sh").text)
 
 			}
 
