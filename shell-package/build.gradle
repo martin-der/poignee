@@ -4,7 +4,7 @@ version '0.1-SNAPSHOT'
 def toolZipName = "net.tetrakoopa.poignee.shell-package.tool.zip"
 
 dependencies {
-	compile "com.github.martin-der.mdu4j:util:develop-SNAPSHOT"
+	compile "com.github.martin-der.mdu4j:util:${property('version.martin-der.mdu4j')}"
 }
 
 task('zipTools', type: Zip) {
