@@ -1,0 +1,29 @@
+
+version '0.1-SNAPSHOT'
+
+dependencies {
+	compile project(':shell-common')
+}
+
+def toolZipName = "net.tetrakoopa.poignee.shell-package.tool.zip"
+
+task('zipTools', type: Zip) {
+
+	archiveName = toolZipName
+
+	destinationDir = file(buildDir)
+
+	from fileTree("tool")
+}
+
+task('tools', dependsOn: 'zipTools') {
+	doLast {
+		copy {
+			from file("${buildDir}/${toolZipName}")
+			into "${buildDir}/resources/main"
+		}
+	}
+}
+
+tools.mustRunAfter processResources
+jar.dependsOn tools

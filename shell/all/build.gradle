@@ -1,0 +1,8 @@
+
+version '0.1-SNAPSHOT'
+
+dependencies {
+	compile project(':shell-package')
+	compile project(':shell-test')
+}
+
