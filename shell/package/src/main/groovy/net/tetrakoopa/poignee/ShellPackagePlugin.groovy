@@ -1,5 +1,6 @@
 package net.tetrakoopa.poignee
 
+import net.tetrakoopa.poignee.packaage.ShellPackageException
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -10,8 +11,21 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 
 	public static final String ID = "net.tetrakoopa.poignee.shell-package"
 
+	private ConfigurableFileCollection makeFileCollectionRelativeToProject(Project project, ConfigurableFileCollection collection) {
+		def projectAbsolutePathWithSlash = project.projectDir.absolutePath+"/"
+		ConfigurableFileCollection relativeCollection
+		relativeCollection = project.files()
+		collection.each { file ->
+			def filenameTrimmed = "${file.path}".startsWith(projectAbsolutePathWithSlash) ? "${file.path}".substring(projectAbsolutePathWithSlash.size()) : file.path
+			relativeCollection.from project.file(filenameTrimmed)
+		}
+		return collection
+	}
+
+
 	private void setShellPackageDefaultsConfiguration(Project project) {
 		ShellPackagePluginExtension packaging = (ShellPackagePluginExtension) project.getExtensions().findByName("packaging")
+		packaging.ready = false
 		packaging.source.directory = "src"
 		packaging.distributionName = null
 		packaging.output.distributionDir = null
@@ -19,9 +33,17 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 	}
 	private void makeShellPackageConfiguration(Project project) {
 		ShellPackagePluginExtension packaging = (ShellPackagePluginExtension) project.getExtensions().findByName("packaging")
+		if (packaging.ready) return
+		packaging.ready = true
+		if (packaging.source.fileCollection == null) throw new GradleException("No source file(s) defined")
+		packaging.source.fileCollection = makeFileCollectionRelativeToProject(project, packaging.source.fileCollection)
 		if (packaging.distributionName == null) packaging.distributionName = "${project.name}-${project.version}"
 		if (packaging.output.distributionDir == null) packaging.output.distributionDir = "${project.buildDir}/distribution"
 		if (packaging.output.documentationDir == null) packaging.output.documentationDir = "${project.buildDir}/documentation"
+
+		packaging.source.fileCollection.each { file ->
+			println "File in source : '${file.path}'"
+		}
 	}
 
 	void apply(Project project) {
@@ -68,9 +90,10 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 
 					destinationDir = project.file("${project.packaging.output.distributionDir}/final")
 
-					from project.fileTree(project.packaging.source.directory).include('*.sh', '*.py', 'README.md')
-					from project.fileTree(project.packaging.output.documentationDir).include('./**')
-					from project.file('README.md')
+					//from project.fileTree(project.packaging.source.directory).include('*.sh', '*.py', 'README.md')
+					//from project.fileTree(project.packaging.output.documentationDir).include('./**')
+					//from project.file('README.md')
+					from project.packaging.source.fileCollection
 				}.execute()
 			}
 		}
@@ -78,10 +101,6 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 		project.task('installer', dependsOn: 'packageZip') {
 
 			doLast {
-
-				project.packaging.source.fileCollection.each { file ->
-					println "Source from ${file.path}"
-				}
 
 				makeShellPackageConfiguration(project)
 
@@ -155,10 +174,11 @@ class PathOrContentLocation {
 	/** Relative to install content './' */
 	String location
 	boolean defined() { return location != null || path != null }
-	void checkOnlyOneDefinition(String forWhat) { if (location != null && path != null) throw new GradleException("Cannot define both for path and loaction for '$forWhat'") }
+	void checkOnlyOneDefinition(String forWhat) { if (location != null && path != null) throw new ShellPackageException("Cannot define both for path and loaction for '$forWhat'") }
 }
 
 class ShellPackagePluginExtension {
+	boolean ready
 	Project project
 	class Output {
 		String distributionDir
@@ -178,7 +198,7 @@ class ShellPackagePluginExtension {
 		final UserScript userScript = new UserScript()
 	}
 
-	final Source source = new Source();
+	final Source source = new Source()
 	String distributionName
 	final Output output = new Output()
 	final Installer installer = new Installer()

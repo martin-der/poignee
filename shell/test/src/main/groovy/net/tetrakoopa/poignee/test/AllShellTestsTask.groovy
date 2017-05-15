@@ -17,7 +17,7 @@ class AllShellTestsTask extends DefaultTask {
 //		if (failedTestsCount>0) {
 //			logger.error("Some test(s) failed :")
 //			failedTests.each { logger.error("  - $name") }
-//			//throw new GradleException("$failedTestsCount / $testsCount failed")
+//			//throw new ShellPluginException("$failedTestsCount / $testsCount failed")
 //		} else
 //			logger.info("All tests succeeded")
 	}
