@@ -22,9 +22,6 @@ subprojects {
 		maven { url 'https://jitpack.io' }
 	}
 
-	println "Project $name (${project.name}) "
-	println "  bottom : "+isBottomProject(name)
-
 	if (name != 'common' && isBottomProject(name)) {
 		apply plugin: 'groovy'
 		apply plugin: 'maven'
@@ -43,7 +40,6 @@ subprojects {
 //	}
 
 	if (project.plugins.hasPlugin("org.gradle.java")) {
-		println  "  is a java project"
 
 		dependencies {
 			compile "com.github.martin-der.mdu4j:util:${property('version.martin-der.mdu4j')}"
