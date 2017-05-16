@@ -83,7 +83,7 @@ execute_user_script() {
 			* ) echo "Please answer Yes or No." ;;
 		esac
 	done
-	echo "Execute '$user_script_to_execute' !";
+	sh "$user_script_to_execute" !
 	local result=$?
 	if [ $result -ne 0 ] ; then
 		log_error "User script exited with error code $result"

@@ -1,62 +1,82 @@
 package net.tetrakoopa.poignee
 
-import net.tetrakoopa.poignee.packaage.ShellPackageException
+import net.tetrakoopa.poignee.packaage.PathOrContentLocation
+import net.tetrakoopa.poignee.packaage.ShellPackagePluginExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
-import org.gradle.api.file.ConfigurableFileCollection
+
+import static net.tetrakoopa.poignee.packaage.ShellPackagePluginExtension.SHELL_PACKAGE_EXTENSION_NAME
 
 class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Project> {
 
 	public static final String ID = "net.tetrakoopa.poignee.shell-package"
 
-	private ConfigurableFileCollection makeFileCollectionRelativeToProject(Project project, ConfigurableFileCollection collection) {
-		def projectAbsolutePathWithSlash = project.projectDir.absolutePath+"/"
-		ConfigurableFileCollection relativeCollection
-		relativeCollection = project.files()
-		collection.each { file ->
-			def filenameTrimmed = "${file.path}".startsWith(projectAbsolutePathWithSlash) ? "${file.path}".substring(projectAbsolutePathWithSlash.size()) : file.path
-			relativeCollection.from project.file(filenameTrimmed)
-		}
-		return collection
-	}
 
+	private void insertProperty(File destination, String propertyName, String propertyValue) {
+		if (propertyValue==null || propertyValue.equals(""))
+			destination.append("${propertyName}=\n")
+		else
+			destination.append("${propertyName}=\"${propertyValue}\"\n")
+	}
+	private boolean insertFileDeclaredAsProperty(File destination, Project project, File file, String propertyName, String fileCopiedName) {
+		if (file!=null) {
+			project.copy {
+				from file
+				into "${project.shell_package.output.distributionDir}/installer"
+				rename { name -> "${fileCopiedName}" }
+			}
+			insertProperty(destination, propertyName, "./${fileCopiedName}")
+		} else {
+			insertProperty(destination, propertyName, null)
+		}
+	}
+	private boolean insertFileOrContentAndDeclareAsProperty(File destination, Project project, PathOrContentLocation pathOrLocation, String propertyName, String fileCopiedName) {
+		if (pathOrLocation.defined()) {
+			if (pathOrLocation.path != null) {
+				insertFileDeclaredAsProperty(destination, project, pathOrLocation.path, propertyName, fileCopiedName)
+			} else {
+				insertProperty(destination, propertyName, "./content/${pathOrLocation.location}")
+			}
+			return true
+		} else {
+			destination.append("${propertyName}=\n")
+			return false
+		}
+	}
 
 	private void setShellPackageDefaultsConfiguration(Project project) {
-		ShellPackagePluginExtension packaging = (ShellPackagePluginExtension) project.getExtensions().findByName("packaging")
-		packaging.ready = false
-		packaging.source.directory = "src"
-		packaging.distributionName = null
-		packaging.output.distributionDir = null
-		packaging.output.documentationDir = null
+		ShellPackagePluginExtension shell_package = (ShellPackagePluginExtension) project.getExtensions().findByName(SHELL_PACKAGE_EXTENSION_NAME)
+		shell_package.ready = false
+		shell_package.distributionName = null
+		shell_package.installer.licence.location = shell_package.installer.licence.path = null
+		shell_package.installer.readme.location = shell_package.installer.readme.path = null
+		shell_package.installer.userScript.script.location = shell_package.installer.userScript.script.path = null
+		shell_package.installer.userScript.question = null
+		shell_package.output.distributionDir = null
+		shell_package.output.documentationDir = null
 	}
 	private void makeShellPackageConfiguration(Project project) {
-		ShellPackagePluginExtension packaging = (ShellPackagePluginExtension) project.getExtensions().findByName("packaging")
-		if (packaging.ready) return
-		packaging.ready = true
-		if (packaging.source.fileCollection == null) throw new GradleException("No source file(s) defined")
-		packaging.source.fileCollection = makeFileCollectionRelativeToProject(project, packaging.source.fileCollection)
-		if (packaging.distributionName == null) packaging.distributionName = "${project.name}-${project.version}"
-		if (packaging.output.distributionDir == null) packaging.output.distributionDir = "${project.buildDir}/distribution"
-		if (packaging.output.documentationDir == null) packaging.output.documentationDir = "${project.buildDir}/documentation"
-
-		packaging.source.fileCollection.each { file ->
-			println "File in source : '${file.path}'"
-		}
+		ShellPackagePluginExtension shell_package = (ShellPackagePluginExtension) project.getExtensions().findByName(SHELL_PACKAGE_EXTENSION_NAME)
+		if (shell_package.ready) return
+		shell_package.ready = true
+		if (shell_package.source == null) throw new GradleException("No source file(s) defined")
+		if (shell_package.distributionName == null) shell_package.distributionName = "${project.name}-${project.version}"
+		if (shell_package.output.distributionDir == null) shell_package.output.distributionDir = "${project.buildDir}/distribution"
+		if (shell_package.output.documentationDir == null) shell_package.output.documentationDir = "${project.buildDir}/documentation"
 	}
 
 	void apply(Project project) {
 
 		File toolResourcesDir = prepareResources(project, "${ID}", "tool")
 
-		project.extensions.create("packaging", ShellPackagePluginExtension)
+		project.extensions.create(SHELL_PACKAGE_EXTENSION_NAME, ShellPackagePluginExtension, project)
 		setShellPackageDefaultsConfiguration(project)
-		((ShellPackagePluginExtension) project.getExtensions().findByName("packaging")).project = project
 
 		project.task('documentation') {
 
-			ext.inputFiles = project.fileTree(project.packaging.source.directory).include('*.sh')
+			ext.inputFiles = project.shell_package.source
 
 			doLast {
 
@@ -64,7 +84,7 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 
 				def shellScripts = ext.inputFiles
 
-				File docDir = project.file(project.packaging.output.documentationDir)
+				File docDir = project.file(project.shell_package.output.documentationDir)
 
 				if (!docDir.exists()) docDir.mkdirs()
 
@@ -86,14 +106,11 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 
 				project.task('packageZip.doIt', type: Zip, dependsOn: 'documentation') {
 
-					baseName = project.packaging.distributionName
+					baseName = project.shell_package.distributionName
 
-					destinationDir = project.file("${project.packaging.output.distributionDir}/final")
+					destinationDir = project.file("${project.shell_package.output.distributionDir}/final")
 
-					//from project.fileTree(project.packaging.source.directory).include('*.sh', '*.py', 'README.md')
-					//from project.fileTree(project.packaging.output.documentationDir).include('./**')
-					//from project.file('README.md')
-					from project.packaging.source.fileCollection
+					from project.shell_package.source
 				}.execute()
 			}
 		}
@@ -104,62 +121,45 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 
 				makeShellPackageConfiguration(project)
 
-				def installerFile = project.file("${project.packaging.output.distributionDir}/${project.packaging.distributionName}.shar")
+				def installerFile = project.file("${project.shell_package.output.distributionDir}/${project.shell_package.distributionName}.shar")
 
 				project.copy {
-					from project.zipTree(project.file("${project.packaging.output.distributionDir}/final/${project.packaging.distributionName}.zip"))
-					into "${project.packaging.output.distributionDir}/installer/content"
+					from project.zipTree(project.file("${project.shell_package.output.distributionDir}/final/${project.shell_package.distributionName}.zip"))
+					into "${project.shell_package.output.distributionDir}/installer/content"
 				}
-				def installsh = project.file("${project.packaging.output.distributionDir}/installer/install.sh")
+				def installsh = project.file("${project.shell_package.output.distributionDir}/installer/install.sh")
 				if (installsh.exists()) installsh.delete()
 				installsh.append(new File("${toolResourcesDir}/install/template/install/install-pre.sh").text)
 
-				if (project.packaging.installer.readme.defined()) {
-					project.packaging.installer.readme.checkOnlyOneDefinition("packaging.installer.readme")
-					installsh.append("readme_to_show=\"content/${project.packaging.installer.readme.location}\"\n")
-				}
-				else
-					installsh.append("readme_to_show=\n")
+				insertFileOrContentAndDeclareAsProperty(installsh, project, project.shell_package.installer.readme, "readme_to_show", "README")
 
-				if (project.packaging.installer.licence.defined()) {
-					project.packaging.installer.licence.checkOnlyOneDefinition("packaging.installer.licence")
-					installsh.append("licence_to_show=\"content/${project.packaging.installer.licence.location}\"\n")
-				}
-				else
-					installsh.append("licence_to_show=\n")
+				insertFileOrContentAndDeclareAsProperty(installsh, project, project.shell_package.installer.licence, "licence_to_show", "LICENCE")
 
-				if (project.packaging.installer.userScript.path != null) {
-					project.copy {
-						from project.packaging.installer.userScript.path
-						into "${project.packaging.output.distributionDir}/installer/userscript.sh"
-					}
-					installsh.append("user_script_to_execute='./userscript.sh'\n")
-					installsh.append("user_script_question=\"${project.packaging.installer.userScript.question}\"\n")
-				} else {
-					installsh.append("user_script_to_execute=\n")
-				}
+				insertFileOrContentAndDeclareAsProperty(installsh, project, project.shell_package.installer.userScript.script, "user_script_to_execute", "user_post_install")
+				insertProperty(installsh, "user_script_question", project.shell_package.installer.userScript.question)
+
 				installsh.append(new File("${toolResourcesDir}/install/template/install/install-post.sh").text)
 
 				project.exec {
-					workingDir "${project.packaging.output.distributionDir}"
+					workingDir "${project.shell_package.output.distributionDir}"
 					// --submitter=who@where
-					// --archive-name=${project.packaging.distributionName}
+					// --archive-name=${project.shell_package.distributionName}
 					commandLine 'shar', '-q', 'installer'
 					standardOutput = new FileOutputStream(installerFile)
 				}
 
-				def shar = project.file("${project.packaging.output.distributionDir}/final/${project.packaging.distributionName}.run")
+				def shar = project.file("${project.shell_package.output.distributionDir}/final/${project.shell_package.distributionName}.run")
 				if (shar.exists()) shar.delete()
 
 				shar.append(new File("${toolResourcesDir}/install/template/extract-pre.sh").text)
 
 				shar.append("# *** Application variables *** \n")
-				shar.append("MDU_INSTALL_APPLICATION_NAME=${project.name}\n")
-				shar.append("MDU_INSTALL_APPLICATION_LABEL=${project.name}\n")
-				shar.append("MDU_INSTALL_APPLICATION_VERSION=${project.version}\n")
+				insertProperty(shar, "MDU_INSTALL_APPLICATION_NAME", "${project.name}")
+				insertProperty(shar, "MDU_INSTALL_APPLICATION_LABEL", "${project.name}")
+				insertProperty(shar, "MDU_INSTALL_APPLICATION_VERSION", "${project.version}")
 				shar.append("\n")
 
-				shar.append(new File("${project.packaging.output.distributionDir}/${project.packaging.distributionName}.shar").text.replaceAll('\nexit[ ]+0[\n ]*$', "\n"))
+				shar.append(new File("${project.shell_package.output.distributionDir}/${project.shell_package.distributionName}.shar").text.replaceAll('\nexit[ ]+0[\n ]*$', "\n"))
 				shar.append(new File("${toolResourcesDir}/install/template/extract-post.sh").text)
 
 			}
@@ -169,44 +169,3 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 	}
 }
 
-class PathOrContentLocation {
-	File path
-	/** Relative to install content './' */
-	String location
-	boolean defined() { return location != null || path != null }
-	void checkOnlyOneDefinition(String forWhat) { if (location != null && path != null) throw new ShellPackageException("Cannot define both for path and loaction for '$forWhat'") }
-}
-
-class ShellPackagePluginExtension {
-	boolean ready
-	Project project
-	class Output {
-		String distributionDir
-		String documentationDir
-	}
-	class Source {
-		private ConfigurableFileCollection fileCollection
-		String directory
-	}
-	class Installer {
-		class UserScript {
-			File path
-			String question
-		}
-		final PathOrContentLocation readme = new PathOrContentLocation()
-		final PathOrContentLocation licence = new PathOrContentLocation()
-		final UserScript userScript = new UserScript()
-	}
-
-	final Source source = new Source()
-	String distributionName
-	final Output output = new Output()
-	final Installer installer = new Installer()
-
-	ConfigurableFileCollection sourceFrom(Object... paths) {
-		if (source.fileCollection == null)
-			source.fileCollection = project.files(paths)
-		else
-			source.fileCollection.from(paths)
-	}
-}
