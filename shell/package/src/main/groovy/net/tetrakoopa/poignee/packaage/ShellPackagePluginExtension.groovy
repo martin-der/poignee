@@ -2,6 +2,7 @@ package net.tetrakoopa.poignee.packaage
 
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.util.ConfigureUtil
 
 class ShellPackagePluginExtension {
 
@@ -17,6 +18,9 @@ class ShellPackagePluginExtension {
 		String distributionDir
 		String documentationDir
 	}
+	class Documentation {
+		boolean tableOfContent
+	}
 	class Installer {
 		class UserScript {
 			final PathOrContentLocation script = new PathOrContentLocation()
@@ -30,6 +34,7 @@ class ShellPackagePluginExtension {
 	ConfigurableFileCollection source
 	String distributionName
 	final Output output = new Output()
+	final Documentation documentation = new Documentation()
 	final Installer installer = new Installer()
 
 	ConfigurableFileCollection sourceFrom(Object... paths) {
