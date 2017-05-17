@@ -40,6 +40,7 @@ class ShellTestPlugin extends AbstractShellProjectPlugin implements Plugin<Proje
 				println "Create test for ${file.name}"
 				project.task("__shell_test_${file.name}", type:ShellTestTask) {
 					script = file
+					if (project.workingDir != null) workingDir = project.workingDir
 				}
 			}
 		}

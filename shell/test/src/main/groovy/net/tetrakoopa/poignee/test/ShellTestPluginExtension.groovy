@@ -29,6 +29,7 @@ class ShellTestPluginExtension {
 
 	final TestSuite testSuite = new TestSuite()
 	ConfigurableFileCollection testScripts
+	File workingDir
 	final Result result = new Result()
 
 	ConfigurableFileCollection from(Object... paths) {
@@ -37,6 +38,11 @@ class ShellTestPluginExtension {
 		else
 			testScripts.from(paths)
 		return testScripts
+	}
+
+	ShellTestPluginExtension workingDir(Object dir) {
+		workingDir = project.file(dir)
+		return this
 	}
 
 	def testSuite(Closure closure) { ConfigureUtil.configure(closure, testSuite) }
