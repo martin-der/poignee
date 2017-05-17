@@ -35,6 +35,15 @@ class ShellTestPlugin extends AbstractShellProjectPlugin implements Plugin<Proje
 
 		preprareEnvironment(project)
 
+		project.afterEvaluate {
+			project.shell_test.testScripts.each() { file ->
+				println "Create test for ${file.name}"
+				project.task("__shell_test_${file.name}", type:ShellTestTask) {
+					script = file
+				}
+			}
+		}
+
 		project.task(ALL_TESTS_RESULT_TASK_NAME, type:AllShellTestsTask)
 	}
 }
