@@ -2,7 +2,7 @@ package net.tetrakoopa.poignee
 
 import net.tetrakoopa.poignee.packaage.PathOrContentLocation
 import net.tetrakoopa.poignee.packaage.ShellPackagePluginExtension
-import org.gradle.api.GradleException
+import net.tetrakoopa.poignee.packaage.ShellPackageException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Zip
@@ -61,7 +61,7 @@ class ShellPackagePlugin extends AbstractShellProjectPlugin implements Plugin<Pr
 		ShellPackagePluginExtension shell_package = (ShellPackagePluginExtension) project.getExtensions().findByName(SHELL_PACKAGE_EXTENSION_NAME)
 		if (shell_package.ready) return
 		shell_package.ready = true
-		if (shell_package.source == null) throw new GradleException("No source file(s) defined")
+		if (shell_package.source == null) throw new ShellPackageException("No source file(s) defined")
 		if (shell_package.distributionName == null) shell_package.distributionName = "${project.name}-${project.version}"
 		if (shell_package.output.distributionDir == null) shell_package.output.distributionDir = "${project.buildDir}/distribution"
 		if (shell_package.output.documentationDir == null) shell_package.output.documentationDir = "${project.buildDir}/documentation"
