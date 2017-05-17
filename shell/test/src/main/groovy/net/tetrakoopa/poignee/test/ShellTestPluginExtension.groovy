@@ -30,5 +30,16 @@ class ShellTestPluginExtension {
 	final TestSuite testSuite = new TestSuite()
 	ConfigurableFileCollection testScripts
 	final Result result = new Result()
+
+	ConfigurableFileCollection from(Object... paths) {
+		if (testScripts == null)
+			testScripts = project.files(paths)
+		else
+			testScripts.from(paths)
+		return testScripts
+	}
+
+	def testSuite(Closure closure) { ConfigureUtil.configure(closure, testSuite) }
+	def result(Closure closure) { ConfigureUtil.configure(closure, result) }
 }
 
