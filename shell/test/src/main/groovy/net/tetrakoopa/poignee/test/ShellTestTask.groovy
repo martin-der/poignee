@@ -1,6 +1,6 @@
 package net.tetrakoopa.poignee.test
 
-import net.tetrakoopa.poignee.ShellTestPluginExtension
+import net.tetrakoopa.poignee.test.ShellTestPluginExtension
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -22,18 +22,18 @@ class ShellTestTask extends DefaultTask {
 
 		Project project = getProject()
 		def logger = project.logger
-		ShellTestPluginExtension shellTest = project.shellTest
+		ShellTestPluginExtension shell_test = project.shell_test
 		logger.info("Testing '${script.name}'")
 		Project topProject = project.getTopProject()
 		File toolsResourcesDir = topProject.file("${topProject.buildDir}/net.tetrakoopa.poignee.shell-test/tool")
 
-		shellTest.result.executedTestsCount++
+		shell_test.result.executedTestsCount++
 
 		if (workingDir==null) workingDir = project.file(".").absolutePath
 
 		def execResult = project.exec() {
 			it.workingDir = workingDir
-			it.environment project.shellTest.environmentVariables
+			it.environment project.shell_test.environmentVariables
 			commandLine 'bash', "${script.path}"
 			ignoreExitValue true
 			standardOutput new LogOutputStream(logger, outputRedirect.standard)
@@ -41,7 +41,7 @@ class ShellTestTask extends DefaultTask {
 		}
 		logger.info("  Tested '${script.path}' : $execResult")
 		if(execResult.exitValue != 0) {
-			shellTest.result.failedTests << "${script.path}"
+			shell_test.result.failedTests << "${script.path}"
 		}
 	}
 
