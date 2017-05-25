@@ -1,13 +1,13 @@
 
 task wrapper(type: Wrapper) { gradleVersion = '3.4.1' }
 
-
-def isBottomProject(String name) {
-	def bottom = true
-	allprojects.each { project ->
-		if (project.name != name && project.name.startsWith(name+"/")) { bottom = false ; return ; }
+def getGitVersionName() {
+	def stdout = new ByteArrayOutputStream()
+	project.exec {
+		commandLine 'git', 'describe', '--tags', '--always'
+		standardOutput = stdout
 	}
-	return bottom
+	return stdout.toString().trim()
 }
 
 allprojects {
@@ -22,28 +22,10 @@ subprojects {
 		maven { url 'https://jitpack.io' }
 	}
 
-	if (name != 'common' && isBottomProject(name)) {
-		apply plugin: 'groovy'
-		apply plugin: 'maven'
-	}
-	if (name == 'common') {
-		apply plugin: 'java'
-	}
-
-//	tasks.withType(Jar) {
-//		if (project.name.endsWith("/all")) {
-//			baseName = project.name.substring(0,project.name.size()-"/all".size()).replaceAll('/','-')
-//		} else {
-//			baseName = project.name.replaceAll('/','-')
-//		}
-//		println "  baseName => '$baseName'"
-//	}
+	apply plugin: 'groovy'
+	apply plugin: 'maven'
 
 	if (project.plugins.hasPlugin("org.gradle.java")) {
-
-		dependencies {
-			compile "com.github.martin-der.mdu4j:util:${property('version.martin-der.mdu4j')}"
-		}
 
 		dependencies {
 			compile gradleApi()
@@ -65,8 +47,8 @@ subprojects {
 			}
 		}
 
-		sourceCompatibility = "${property('sourceCompatibility')}"
-		targetCompatibility = "${property('targetCompatibility')}"
+		sourceCompatibility = "1.8" //"${property('sourceCompatibility')}"
+		targetCompatibility = "1.7" //"${property('targetCompatibility')}"
 	}
 
 }
