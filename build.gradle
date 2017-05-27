@@ -47,8 +47,11 @@ subprojects {
 			}
 		}
 
-		sourceCompatibility = "1.8" //"${property('sourceCompatibility')}"
-		targetCompatibility = "1.7" //"${property('targetCompatibility')}"
+		compileGroovy.doFirst {
+			sourceCompatibility = "1.8" //"${property('sourceCompatibility')}"
+			targetCompatibility = "1.7" //"${property('targetCompatibility')}"
+		}
+
 	}
 
 }
