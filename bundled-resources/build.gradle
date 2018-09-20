@@ -1,0 +1,9 @@
+
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+version getGitVersionName()
+
+dependencies {
+	compile project(':common-project')
+}
