@@ -5,6 +5,7 @@ import net.tetrakoopa.gradle.plugin.common.Util
 import net.tetrakoopa.gradle.plugin.common.exception.PluginException
 import net.tetrakoopa.gradle.plugin.common.exception.PluginExtensionException
 import net.tetrakoopa.mdu4j.util.IOUtil
+import net.tetrakoopa.gradle.plugin.common.StringUtil
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -16,6 +17,8 @@ import org.gradle.api.tasks.bundling.Zip
 class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Project>, DependencyResolutionListener {
 
 	public final static String ID = "net.tetrakoopa.poignee.bundled-resources"
+
+	public final static String PLUGIN_ID_EXCLUDED_CHARACTERS = " /\\:<>\"?*|"
 
 	private final static String TASK_NAME_CREATE_RESOURCES_ARCHIVE = "mdu.poignee.createResourcesArchive"
 	private final static String TASK_NAME_ADD_RESOURCES_ARCHIVE_TO_RESOURCES = "mdu.poignee.addResourcesArchiveToPluginResources"
@@ -56,7 +59,11 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 			BundledResourcesPluginExtension extension = project.extensions.getByName(BundledResourcesPluginExtension.EXTENSION_NAME)
 
 			if (! extension.pluginId?.trim()) {
-				throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "pluginId is missing")
+				throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' is missing")
+			}
+
+			if (StringUtil.containsOneOf(extension.pluginId.toCharArray(),PLUGIN_ID_EXCLUDED_CHARACTERS.toCharArray())) {
+				throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' must not contain any of '${PLUGIN_ID_EXCLUDED_CHARACTERS}'");
 			}
 
 			int bundleIndex = 0
@@ -102,9 +109,9 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	protected void addCreateResourcesBundleTasks(Project project, String pluginId, ConfigurableFileCollection source, String destination, String name) {
 		def zipName = "${pluginId}.${name}.zip"
 
-		final String taskNameCreateResourcesArchive = pluginId+"/"+TASK_NAME_CREATE_RESOURCES_ARCHIVE+"/"+name
-		final String taskNameAddResourcesArchiveToResources = pluginId+"/"+TASK_NAME_ADD_RESOURCES_ARCHIVE_TO_RESOURCES+"/"+name
-		final String taskNameCopyResourcesToIntermediateDirectory = pluginId+"/"+TASK_NAME_COPY_RESOURCES_TO_INTERMEDIATE_DIRECTORY+"/"+name
+		final String taskNameCreateResourcesArchive = pluginId+"__"+TASK_NAME_CREATE_RESOURCES_ARCHIVE+"__"+name
+		final String taskNameAddResourcesArchiveToResources = pluginId+"__"+TASK_NAME_ADD_RESOURCES_ARCHIVE_TO_RESOURCES+"__"+name
+		final String taskNameCopyResourcesToIntermediateDirectory = pluginId+"__"+TASK_NAME_COPY_RESOURCES_TO_INTERMEDIATE_DIRECTORY+"__"+name
 
 		def copyResourcesToIntermediateDirectoryTask = null
 		File intermediateDirectory = null
