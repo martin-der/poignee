@@ -21,7 +21,7 @@ class UtilPlugin implements Plugin<Project> {
 
 
 	void apply(Project project) {
-		project.ext.getGitVersionName = { ->
+		project.ext.gitVersionName = { ->
 			return UtilPlugin.getGitVersionName(project)
 		}
 
