@@ -13,7 +13,26 @@ class UtilPlugin implements Plugin<Project> {
 	private static String getGitVersionName(Project project) {
 		def stdout = new ByteArrayOutputStream()
 		project.exec {
+			workingDir = project.projectDir
 			commandLine 'git', 'describe', '--tags', '--always'
+			standardOutput = stdout
+		}
+		return stdout.toString().trim()
+	}
+	private static String getGitUserName(Project project) {
+		def stdout = new ByteArrayOutputStream()
+		project.exec {
+			workingDir = project.projectDir
+			commandLine 'git', 'config', 'user.name'
+			standardOutput = stdout
+		}
+		return stdout.toString().trim()
+	}
+	private static String getGitUserEmail(Project project) {
+		def stdout = new ByteArrayOutputStream()
+		project.exec {
+			workingDir = project.projectDir
+			commandLine 'git', 'config', 'user.email'
 			standardOutput = stdout
 		}
 		return stdout.toString().trim()
@@ -23,6 +42,12 @@ class UtilPlugin implements Plugin<Project> {
 	void apply(Project project) {
 		project.ext.gitVersionName = { ->
 			return UtilPlugin.getGitVersionName(project)
+		}
+		project.ext.getGitUserName = { ->
+			return UtilPlugin.getGitUserName(project)
+		}
+		project.ext.getGitUserEmail = { ->
+			return UtilPlugin.getGitUserEmail(project)
 		}
 
 		project.ext.applyEnvironmentScript = { ->
