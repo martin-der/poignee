@@ -20,8 +20,8 @@ class BundledResourcesPluginExtension {
 		private Project project
 
 		String name
-		ConfigurableFileCollection source
-		String destination
+		private ConfigurableFileCollection source
+		private String destination
 
 		Bundle(Project project) {
 			this.project = project
