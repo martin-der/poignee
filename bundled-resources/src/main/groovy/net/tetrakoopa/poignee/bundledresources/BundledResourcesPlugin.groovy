@@ -9,6 +9,7 @@ import net.tetrakoopa.gradle.plugin.common.StringUtil
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.DependencyResolutionListener
 import org.gradle.api.artifacts.ResolvableDependencies
 import org.gradle.api.file.ConfigurableFileCollection
@@ -16,7 +17,7 @@ import org.gradle.api.tasks.bundling.Zip
 
 class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Project>, DependencyResolutionListener {
 
-	public final static String ID = "net.tetrakoopa.poignee.bundled-resources"
+	public final static String ID = "net.tetrakoopa.bundled-resources"
 
 	public final static String PLUGIN_ID_EXCLUDED_CHARACTERS = " /\\:<>\"?*|"
 
@@ -24,11 +25,13 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	private final static String TASK_NAME_ADD_RESOURCES_ARCHIVE_TO_RESOURCES = "mdu.poignee.addResourcesArchiveToPluginResources"
 	private final static String TASK_NAME_COPY_RESOURCES_TO_INTERMEDIATE_DIRECTORY = "mdu.poignee.taskNameCopyResourcesToIntermediateDirectory"
 
+	private static final String RESOURCE_PROJECTS_REFERENCES = "net.tetrakoopa.bundled-resources.projects-references.properties";
+
 	private Project project
 
 	private void addDependencies(Project project) {
 		final Properties projectsReferences = new Properties()
-		projectsReferences.load(SDLPlugin.class.getClassLoader().getResourceAsStream("net.tetrakoopa.poignee.bundled-resources.projects-references.properties"))
+		projectsReferences.load(SDLPlugin.class.getClassLoader().getResourceAsStream(RESOURCE_PROJECTS_REFERENCES))
 
 		String selfProjectReference = projectsReferences.getProperty("bundled-resources")
 
@@ -107,6 +110,10 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	}
 
 	protected void addCreateResourcesBundleTasks(Project project, String pluginId, ConfigurableFileCollection source, String destination, String name) {
+		Task addCreateResourcesBundleTask = createAddCreateResourcesBundleTasks ( project, pluginId, source, destination, name )
+		project.tasks['jar'].dependsOn addCreateResourcesBundleTask
+	}
+	protected Task createAddCreateResourcesBundleTasks(Project project, String pluginId, ConfigurableFileCollection source, String destination, String name) {
 		def zipName = "${pluginId}.${name}.zip"
 
 		final String taskNameCreateResourcesArchive = pluginId+"__"+TASK_NAME_CREATE_RESOURCES_ARCHIVE+"__"+name
@@ -148,7 +155,7 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 			}
 		}
 
-		project.tasks['jar'].dependsOn addArchiveToResourcesTask
+		return addArchiveToResourcesTask
 	}
 
 	@Override

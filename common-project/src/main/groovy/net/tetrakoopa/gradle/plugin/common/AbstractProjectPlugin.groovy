@@ -9,7 +9,7 @@ import org.gradle.api.tasks.bundling.Zip
 
 abstract class AbstractProjectPlugin implements Plugin<Project> {
 
-	public final static String ID = "net.tetrakoopa.poignee.common-project"
+	public final static String ID = "net.tetrakoopa.common-project"
 
 	protected void addProjectExtensions(Project project) {
 		project.ext.getTopProject = { return getTopProject(project) }
