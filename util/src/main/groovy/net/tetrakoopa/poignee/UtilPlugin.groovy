@@ -10,34 +10,26 @@ class UtilPlugin implements Plugin<Project> {
 
 	public static String DEFAULT_ENVIRONMENT_FILENAME_TEMPLATE = "gradle/"+ENVIRONMENT_PLACEHOLDER+"-env.gradle"
 
-	private static String getGitVersionName(Project project) {
+	private static String getGitOutput(Project project, String... parameters) {
 		def stdout = new ByteArrayOutputStream()
+		def allParameters = ['git'] + parameters
 		project.exec {
 			workingDir = project.projectDir
-			commandLine 'git', 'describe', '--tags', '--always'
+			commandLine = allParameters as List
 			standardOutput = stdout
 		}
-		return stdout.toString().trim()
-	}
-	private static String getGitUserName(Project project) {
-		def stdout = new ByteArrayOutputStream()
-		project.exec {
-			workingDir = project.projectDir
-			commandLine 'git', 'config', 'user.name'
-			standardOutput = stdout
-		}
-		return stdout.toString().trim()
-	}
-	private static String getGitUserEmail(Project project) {
-		def stdout = new ByteArrayOutputStream()
-		project.exec {
-			workingDir = project.projectDir
-			commandLine 'git', 'config', 'user.email'
-			standardOutput = stdout
-		}
-		return stdout.toString().trim()
+		return stdout.toString()
 	}
 
+	private static String getGitVersionName(Project project) {
+		return getGitOutput(project, 'git', 'describe', '--tags', '--always').trim()
+	}
+	private static String getGitUserName(Project project) {
+		return getGitOutput(project, 'config', 'user.name').trim()
+	}
+	private static String getGitUserEmail(Project project) {
+		return getGitOutput(project, 'config', 'user.email').trim()
+	}
 
 	void apply(Project project) {
 		project.ext.gitVersionName = { ->
