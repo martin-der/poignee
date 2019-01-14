@@ -12,7 +12,8 @@ class UtilPlugin implements Plugin<Project> {
 
 	private static String getGitOutput(Project project, String... parameters) {
 		def stdout = new ByteArrayOutputStream()
-		def allParameters = ['git'] + parameters
+		def allParameters = ['git']
+		allParameters.addAll(parameters)
 		project.exec {
 			workingDir = project.projectDir
 			commandLine = allParameters as List
@@ -22,7 +23,7 @@ class UtilPlugin implements Plugin<Project> {
 	}
 
 	private static String getGitVersionName(Project project) {
-		return getGitOutput(project, 'git', 'describe', '--tags', '--always').trim()
+		return getGitOutput(project, 'describe', '--tags', '--always').trim()
 	}
 	private static String getGitUserName(Project project) {
 		return getGitOutput(project, 'config', 'user.name').trim()
@@ -35,10 +36,10 @@ class UtilPlugin implements Plugin<Project> {
 		project.ext.gitVersionName = { ->
 			return UtilPlugin.getGitVersionName(project)
 		}
-		project.ext.getGitUserName = { ->
+		project.ext.gitUserName = { ->
 			return UtilPlugin.getGitUserName(project)
 		}
-		project.ext.getGitUserEmail = { ->
+		project.ext.gitUserEmail = { ->
 			return UtilPlugin.getGitUserEmail(project)
 		}
 
