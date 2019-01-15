@@ -12,12 +12,19 @@ class UtilPlugin implements Plugin<Project> {
 
 	private static String getGitOutput(Project project, String... parameters) {
 		def stdout = new ByteArrayOutputStream()
+		def stderr = new ByteArrayOutputStream()
 		def allParameters = ['git']
 		allParameters.addAll(parameters)
-		project.exec {
-			workingDir = project.projectDir
-			commandLine = allParameters as List
-			standardOutput = stdout
+		try {
+			project.exec {
+				workingDir = project.projectDir
+				commandLine = allParameters as List
+				standardOutput = stdout
+				errorOutput = stderr
+			}
+		} catch (org.gradle.process.internal.ExecException ee) {
+			println(stderr.toString())
+			throw ee
 		}
 		return stdout.toString()
 	}
@@ -32,6 +39,19 @@ class UtilPlugin implements Plugin<Project> {
 		return getGitOutput(project, 'config', 'user.email').trim()
 	}
 
+	private static String getGitLastTag(Project project) {
+		return getGitOutput(project, 'rev-list', '--tags', '--skip=0', '--max-count=1').trim()
+	}
+
+	/**
+	 * @param format Format as in git <code>--pretty=format:</code>
+	 * @param newerRevision This revision is excluded from the list
+	 */
+	private static String[] getGitCommitMessages(Project project, String format, String olderRevision, String newerRevision) {
+		final String[] commits = getGitOutput(project, 'log', "--pretty=format:${format}", '--ancestry-path', "${olderRevision}..${newerRevision}").split('\n')
+		return commits
+	}
+
 	void apply(Project project) {
 		project.ext.gitVersionName = { ->
 			return UtilPlugin.getGitVersionName(project)
@@ -41,6 +61,13 @@ class UtilPlugin implements Plugin<Project> {
 		}
 		project.ext.gitUserEmail = { ->
 			return UtilPlugin.getGitUserEmail(project)
+		}
+
+		project.ext.gitLastTag = { ->
+			return UtilPlugin.getGitLastTag(project)
+		}
+		project.ext.gitCommitMessages = { format, olderRevision, newerRevision ->
+			return UtilPlugin.getGitCommitMessages(project, format, olderRevision, newerRevision)
 		}
 
 		project.ext.applyEnvironmentScript = { ->
