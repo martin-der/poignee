@@ -7,7 +7,8 @@ def getGitVersionName() {
 		commandLine 'git', 'describe', '--tags', '--always'
 		standardOutput = stdout
 	}
-	return stdout.toString().trim()
+	def rawVersion = stdout.toString().trim()
+	return rawVersion.replaceFirst(/^[vV]([^a-zA-Z].*$)/, '$1')
 }
 
 allprojects {
@@ -24,6 +25,12 @@ subprojects {
 
 	apply plugin: 'groovy'
 	apply plugin: 'maven'
+
+	dependencies {
+		testCompile('org.spockframework:spock-core:1.1-groovy-2.4') {
+			exclude group: 'org.codehaus.groovy', module: 'groovy-all'
+		}
+	}
 
 	if (project.plugins.hasPlugin("org.gradle.java")) {
 
