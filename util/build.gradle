@@ -5,6 +5,7 @@ apply plugin: 'maven'
 version getGitVersionName()
 
 dependencies {
+	compile project(':common-project')
 	testCompile group: 'junit', name: 'junit', version: '4.12'
 	compile "com.github.martin-der.mdu4j:util:${property('version.martin-der.mdu4j')}"
 }
