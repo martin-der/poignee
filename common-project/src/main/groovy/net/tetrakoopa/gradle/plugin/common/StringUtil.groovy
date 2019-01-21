@@ -9,4 +9,13 @@ class StringUtil {
 				if (a[ia] == b[ib]) return true
 		return false
 	}
+
+	static String removeVInVersionStart(String version) {
+		return version.replaceFirst(/^[vV]([^a-zA-Z].*$)/, '$1')
+	}
+
+	static class VersionMapper {
+		public final  DROP_LEADING_V = { q -> removeVInVersionStart(q) }
+	}
+
 }
