@@ -3,6 +3,7 @@ package net.tetrakoopa.poignee
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import net.tetrakoopa.gradle.plugin.common.StringUtil
 
 class UtilPlugin implements Plugin<Project> {
 
@@ -53,8 +54,9 @@ class UtilPlugin implements Plugin<Project> {
 	}
 
 	void apply(Project project) {
+		project.ext.VERSION_MAPPER = new StringUtil.VersionMapper()
 		project.ext.gitVersionName = { ->
-			return UtilPlugin.getGitVersionName(project)
+			UtilPlugin.getGitVersionName(project)
 		}
 		project.ext.gitUserName = { ->
 			return UtilPlugin.getGitUserName(project)
