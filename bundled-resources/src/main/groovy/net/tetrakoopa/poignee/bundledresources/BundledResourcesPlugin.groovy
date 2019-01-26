@@ -1,12 +1,10 @@
 package net.tetrakoopa.poignee.bundledresources
 
 import net.tetrakoopa.gradle.plugin.common.AbstractProjectPlugin
+import net.tetrakoopa.gradle.plugin.common.StringUtil
 import net.tetrakoopa.gradle.plugin.common.Util
-import net.tetrakoopa.gradle.plugin.common.exception.PluginException
 import net.tetrakoopa.gradle.plugin.common.exception.PluginExtensionException
 import net.tetrakoopa.mdu4j.util.IOUtil
-import net.tetrakoopa.gradle.plugin.common.StringUtil
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -25,13 +23,13 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	private final static String TASK_NAME_ADD_RESOURCES_ARCHIVE_TO_RESOURCES = "mdu.poignee.addResourcesArchiveToPluginResources"
 	private final static String TASK_NAME_COPY_RESOURCES_TO_INTERMEDIATE_DIRECTORY = "mdu.poignee.taskNameCopyResourcesToIntermediateDirectory"
 
-	private static final String RESOURCE_PROJECTS_REFERENCES = "net.tetrakoopa.bundled-resources.projects-references.properties";
+	private static final String RESOURCE_NAME_PROJECTS_REFERENCES = "net.tetrakoopa.bundled-resources.projects-references.properties";
 
 	private Project project
 
 	private void addDependencies(Project project) {
 		final Properties projectsReferences = new Properties()
-		projectsReferences.load(SDLPlugin.class.getClassLoader().getResourceAsStream(RESOURCE_PROJECTS_REFERENCES))
+		projectsReferences.load(SDLPlugin.class.getClassLoader().getResourceAsStream(RESOURCE_NAME_PROJECTS_REFERENCES))
 
 		String selfProjectReference = projectsReferences.getProperty("bundled-resources")
 
