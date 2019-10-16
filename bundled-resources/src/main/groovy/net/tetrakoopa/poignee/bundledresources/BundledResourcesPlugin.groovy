@@ -93,7 +93,7 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 		String pluginBundledResource = "${ID}/${pluginId}.${name}.zip"
 		//InputStream toolInput = project.getClass().getClassLoader().getResourceAsStream(pluginBundledResource)
 		InputStream toolInput = BundledResourcesPlugin.class.getClassLoader().getResourceAsStream(pluginBundledResource)
-		if (toolInput == null) throw new NullPointerException("No such resources bundle '${pluginBundledResource}'")
+		if (toolInput == null) throw new MissingResourceException("No such resources bundle '${pluginBundledResource}' for project ${project.name}")
 		IOUtil.copy((InputStream)toolInput, new FileOutputStream(resourcesZip))
 
 		topProject.copy {
@@ -108,6 +108,7 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	}
 
 	protected void addCreateResourcesBundleTasks(Project project, String pluginId, ConfigurableFileCollection source, String destination, String name) {
+		project.logger.info("Adding resource bundle ${name} ")
 		Task addCreateResourcesBundleTask = createAddCreateResourcesBundleTasks ( project, pluginId, source, destination, name )
 		project.tasks['jar'].dependsOn addCreateResourcesBundleTask
 	}
