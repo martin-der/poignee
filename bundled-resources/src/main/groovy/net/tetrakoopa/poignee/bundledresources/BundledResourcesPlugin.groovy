@@ -5,6 +5,7 @@ import net.tetrakoopa.gradle.plugin.common.StringUtil
 import net.tetrakoopa.gradle.plugin.common.Util
 import net.tetrakoopa.gradle.plugin.common.exception.PluginExtensionException
 import net.tetrakoopa.mdu4j.util.IOUtil
+import net.tetrakoopa.poignee.bundledresources.exception.BundledPluginExtensionException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -60,17 +61,17 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 			BundledResourcesPluginExtension extension = project.extensions.getByName(BundledResourcesPluginExtension.EXTENSION_NAME)
 
 			if (! extension.pluginId?.trim()) {
-				throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' is missing")
+				throw new BundledPluginExtensionException(BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' is missing")
 			}
 
 			if (StringUtil.containsOneOf(extension.pluginId.toCharArray(),PLUGIN_ID_EXCLUDED_CHARACTERS.toCharArray())) {
-				throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' must not contain any of '${PLUGIN_ID_EXCLUDED_CHARACTERS}'");
+				throw new BundledPluginExtensionException(BundledResourcesPluginExtension.EXTENSION_NAME, "Plugin Identifier 'pluginId' must not contain any of '${PLUGIN_ID_EXCLUDED_CHARACTERS}'");
 			}
 
 			int bundleIndex = 0
 			extension.getBundles().each { bundle ->
 				if (! bundle.name?.trim()) {
-					throw new PluginExtensionException(ID, BundledResourcesPluginExtension.EXTENSION_NAME, "bundle[${bundleIndex}].name is missing")
+					throw new BundledPluginExtensionException(BundledResourcesPluginExtension.EXTENSION_NAME, "bundle[${bundleIndex}].name is missing")
 				}
 				addCreateResourcesBundleTasks(project, extension.pluginId, bundle.source, bundle.destination, bundle.name)
 				bundleIndex++
