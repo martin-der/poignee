@@ -1,5 +1,5 @@
 
-task gradleWrapper(type: Wrapper) { gradleVersion = '3.4.1' }
+wrapper { gradleVersion = '5.1' }
 
 def getGitVersionName() {
 	def stdout = new ByteArrayOutputStream()
