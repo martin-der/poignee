@@ -94,7 +94,7 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 		String pluginBundledResource = "${ID}/${pluginId}.${name}.zip"
 		//InputStream toolInput = project.getClass().getClassLoader().getResourceAsStream(pluginBundledResource)
 		InputStream toolInput = BundledResourcesPlugin.class.getClassLoader().getResourceAsStream(pluginBundledResource)
-		if (toolInput == null) throw new MissingResourceException("No such resources bundle '${pluginBundledResource}' for project ${project.name}")
+		if (toolInput == null) throw new MissingResourceException("No such resources bundle '${pluginBundledResource}' for project ${project.name}", project.class.name, pluginBundledResource)
 		IOUtil.copy((InputStream)toolInput, new FileOutputStream(resourcesZip))
 
 		topProject.copy {
