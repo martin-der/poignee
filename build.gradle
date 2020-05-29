@@ -40,6 +40,15 @@ subprojects {
 			testCompile 'junit:junit:4.12'
 		}
 
+		task sourcesJar(type: Jar, dependsOn:classes) {
+			archiveClassifier = 'sources'
+			from sourceSets.main.allSource
+		}
+
+		artifacts {
+			archives sourcesJar
+		}
+
 		install {
 			repositories.mavenInstaller {
 				pom.project {
