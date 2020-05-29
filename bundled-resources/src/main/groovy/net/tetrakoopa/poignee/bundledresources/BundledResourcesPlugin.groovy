@@ -80,7 +80,7 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	}
 
 	public static File unpackBundledResources(Project project, String pluginId, String name) {
-		retun unpackBundledResourcesUsingThisZip ( project, pluginId, name, null );
+		return unpackBundledResourcesUsingThisZip ( project, pluginId, name, null );
 	}
 	public static File unpackBundledResourcesUsingThisZip(Project project, String pluginId, String name, File zipSource) {
 
