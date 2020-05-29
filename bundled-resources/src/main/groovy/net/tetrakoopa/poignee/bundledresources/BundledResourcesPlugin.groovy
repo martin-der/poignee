@@ -80,6 +80,9 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 	}
 
 	public static File unpackBundledResources(Project project, String pluginId, String name) {
+		retun unpackBundledResourcesUsingThisZip ( project, pluginId, name, null );
+	}
+	public static File unpackBundledResourcesUsingThisZip(Project project, String pluginId, String name, File zipSource) {
 
 		Project topProject = Util.getTopProject(project)
 		File resourcesDir = topProject.file("${topProject.buildDir}/${pluginId}/${name}")
@@ -93,8 +96,17 @@ class BundledResourcesPlugin extends AbstractProjectPlugin implements Plugin<Pro
 		resourcesDir.mkdirs()
 		String pluginBundledResource = "${ID}/${pluginId}.${name}.zip"
 		//InputStream toolInput = project.getClass().getClassLoader().getResourceAsStream(pluginBundledResource)
-		InputStream toolInput = BundledResourcesPlugin.class.getClassLoader().getResourceAsStream(pluginBundledResource)
-		if (toolInput == null) throw new MissingResourceException("No such resources bundle '${pluginBundledResource}' for project ${project.name}", project.class.name, pluginBundledResource)
+		InputStream toolInput;
+		if (zipSource != null) {
+			// If zipSource is provided (we are is most certainly in a test) we use it as content to bundle
+			if (!zipSource.exists()) throw new RuntimeException("Resources bundle zip '${zipSource.absolutePath}' does not exists");
+			toolInput = new FileInputStream(zipSource)
+			if (toolInput == null) throw new RuntimeException("Cannot read resources bundle zip '${zipSource.absolutePath}'")
+		} else {
+			// This is the regular case : the resource zip is inside the plugin jar
+			toolInput = BundledResourcesPlugin.class.getClassLoader().getResourceAsStream(pluginBundledResource)
+			if (toolInput == null) throw new MissingResourceException("No such resources bundle '${pluginBundledResource}' for project ${project.name}", project.class.name, pluginBundledResource)
+		}
 		IOUtil.copy((InputStream)toolInput, new FileOutputStream(resourcesZip))
 
 		topProject.copy {
